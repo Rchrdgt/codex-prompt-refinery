@@ -48,24 +48,33 @@ def get_settings() -> Settings:
 
 
 def embeddings_client(settings: Settings) -> OpenAI:
-    """Return OpenAI client for embeddings."""
+    """Return OpenAI client for embeddings.
+
+    Important: do not pass a None base_url to the OpenAI client, since that
+    overrides the library default and results in invalid absolute URLs.
+    Only include base_url when a non-empty value is provided.
+    """
     if settings.embeddings_provider != "openai":
-        # Fallback to OpenAI; other providers not supported for embeddings on day-1.
+        # Day-1: only OpenAI-compatible embeddings are supported.
+        # If another provider is requested, still construct an OpenAI client
+        # and rely on OPENAI_BASE_URL to target a compatible endpoint.
         pass
-    return OpenAI(
-        api_key=settings.openai_api_key,
-        base_url=settings.openai_base_url or None,
-    )
+    if settings.openai_base_url:
+        return OpenAI(api_key=settings.openai_api_key, base_url=settings.openai_base_url)
+    return OpenAI(api_key=settings.openai_api_key)
 
 
 def llm_client(settings: Settings) -> OpenAI:
     """Return OpenAI client for LLM calls.
 
     Uses OpenAI defaults or Cerebras OpenAI-compatible base_url.
+    Avoid passing base_url=None to preserve library defaults.
     """
     if settings.llm_provider == "cerebras":
         return OpenAI(api_key=settings.cerebras_api_key, base_url=settings.cerebras_base_url)
-    return OpenAI(api_key=settings.openai_api_key, base_url=settings.openai_base_url or None)
+    if settings.openai_base_url:
+        return OpenAI(api_key=settings.openai_api_key, base_url=settings.openai_base_url)
+    return OpenAI(api_key=settings.openai_api_key)
 
 
 def default_llm_model(settings: Settings) -> str:

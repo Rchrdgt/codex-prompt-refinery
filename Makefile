@@ -13,7 +13,7 @@ lint:
 	. .venv/bin/activate && pylint src/pdr || true
 
 test:
-	. .venv/bin/activate && pytest -q
+	. .venv/bin/activate && pytest -q --cov=src/pdr --cov-report=term-missing --cov-fail-under=80
 
 ui:
 	. .venv/bin/activate && pdr ui --port 8501

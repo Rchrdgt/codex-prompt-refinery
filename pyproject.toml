@@ -28,6 +28,7 @@ dev = [
   "ruff>=0.5.0",
   "pylint>=3.2.0",
   "pytest>=8.2.0",
+  "pytest-cov>=5.0.0",
 ]
 ui = [
   "streamlit-ace>=0.1.1",

@@ -1,5 +1,7 @@
 """SQLite connection, schema, and helpers."""
 
+# ruff: noqa: PLC0415  # allow import-inside-function for optional sqlite-vec
+
 from __future__ import annotations
 
 import os
@@ -79,6 +81,17 @@ def create_schema(conn: sqlite3.Connection, embed_dims: int = 1536) -> None:
           raw_id INTEGER,
           PRIMARY KEY (optimized_id, raw_id)
         );
+
+        -- Saved Views for UI (versioned JSON filter + optional grid state)
+        CREATE TABLE IF NOT EXISTS ui_view (
+          id INTEGER PRIMARY KEY,
+          name TEXT NOT NULL,
+          scope TEXT CHECK(scope IN ('raw','optimized','both')) NOT NULL DEFAULT 'both',
+          filters_json TEXT NOT NULL,
+          grid_state_json TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT
+        );
         """
     )
     # FTS5 (with graceful fallback to regular tables if unavailable)
@@ -104,6 +117,59 @@ def create_schema(conn: sqlite3.Connection, embed_dims: int = 1536) -> None:
             );
             """
         )
+    conn.commit()
+
+
+def view_insert(
+    conn: sqlite3.Connection,
+    name: str,
+    scope: str,
+    filters_json: str,
+    grid_state_json: str | None = None,
+) -> int:
+    """Insert a saved view and return its id.
+
+    Args:
+        conn: SQLite connection.
+        name: View name.
+        scope: 'raw' | 'optimized' | 'both'.
+        filters_json: Versioned filter JSON string.
+        grid_state_json: Optional grid state JSON string.
+    """
+    cur = conn.execute(
+        """
+        INSERT INTO ui_view(name, scope, filters_json, grid_state_json)
+        VALUES(?,?,?,?)
+        """,
+        (name, scope, filters_json, grid_state_json),
+    )
+    conn.commit()
+    return int(cur.lastrowid)
+
+
+def view_get(conn: sqlite3.Connection, view_id: int) -> dict | None:
+    """Fetch a saved view by id as a dict (or None)."""
+    r = conn.execute(
+        (
+            "SELECT id, name, scope, filters_json, grid_state_json, created_at, updated_at "
+            "FROM ui_view WHERE id=?"
+        ),
+        (view_id,),
+    ).fetchone()
+    return dict(r) if r else None
+
+
+def view_list(conn: sqlite3.Connection) -> list[dict]:
+    """Return all views (id, name, scope) ordered by created_at DESC."""
+    rows = conn.execute(
+        "SELECT id, name, scope, created_at FROM ui_view ORDER BY created_at DESC"
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def view_delete(conn: sqlite3.Connection, view_id: int) -> None:
+    """Delete a saved view by id."""
+    conn.execute("DELETE FROM ui_view WHERE id=?", (view_id,))
     conn.commit()
 
 

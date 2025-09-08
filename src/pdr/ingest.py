@@ -123,7 +123,16 @@ def ingest_paths(
         safe_text = redact(text)
         canon = canonicalize(safe_text)
         h = sha256_text(canon)
+        # If we've seen this canonical already, ensure ts is populated for the row
         if h in seen:
+            # Populate missing timestamp with file mtime to support date-based clustering
+            # Only update when ts is null/empty to avoid altering real message timestamps
+            file_mtime_iso = datetime.fromtimestamp(os.path.getmtime(file_path), tz=UTC).isoformat()
+            effective_ts = ts or file_mtime_iso
+            conn.execute(
+                "UPDATE prompt_raw SET ts=COALESCE(NULLIF(ts, ''), ?) WHERE canonical_hash=?",
+                (effective_ts, h),
+            )
             return
 
         # Near-dup gate
@@ -134,6 +143,9 @@ def ingest_paths(
                 if delta <= NEAR_DUP_LEN_DELTA:
                     return
 
+        # Persist; when no message ts is present, store file mtime to keep downstream logic simple
+        file_mtime_iso = datetime.fromtimestamp(os.path.getmtime(file_path), tz=UTC).isoformat()
+        effective_ts = ts or file_mtime_iso
         cur = conn.execute(
             (
                 "\n".join(
@@ -151,7 +163,7 @@ def ingest_paths(
                 session_id,
                 conversation_id,
                 role,
-                ts,
+                effective_ts,
                 safe_text,
                 h,
                 raw,

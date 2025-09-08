@@ -38,10 +38,20 @@ def embed_new_user_prompts(
     dims = dimensions if dimensions is not None else settings.embedding_dimensions
 
     inserted = 0
-    ids = [int(r["id"]) for r in rows]
-    texts = [r["text"] for r in rows]
-    for b_ids, b_txts in zip(batched(ids, batch), batched(texts, batch), strict=False):
-        resp = client.embeddings.create(model=use_model, input=list(b_txts), dimensions=dims)
+    # Filter out empty texts and clamp overly long inputs to reduce API errors
+    max_chars = 12000
+    pairs = [
+        (int(r["id"]), (r["text"] or "").strip()[:max_chars])
+        for r in rows
+        if (r["text"] or "").strip()
+    ]
+    if not pairs:
+        return 0
+
+    for batch_pairs in batched(pairs, batch):
+        b_ids = [pid for pid, _ in batch_pairs]
+        b_txts = [txt for _, txt in batch_pairs]
+        resp = client.embeddings.create(model=use_model, input=b_txts, dimensions=dims)
         for idx, emb in enumerate(resp.data):
             vec = json_dumps(emb.embedding)
             vec_insert(conn, vec, "raw", int(b_ids[idx]))
@@ -80,10 +90,19 @@ def embed_optimized_prompts(
     dims = dimensions if dimensions is not None else settings.embedding_dimensions
 
     inserted = 0
-    ids = [int(r["id"]) for r in rows]
-    texts = [r["text_md"] for r in rows]
-    for b_ids, b_txts in zip(batched(ids, batch), batched(texts, batch), strict=False):
-        resp = client.embeddings.create(model=use_model, input=list(b_txts), dimensions=dims)
+    max_chars = 12000
+    pairs = [
+        (int(r["id"]), (r["text_md"] or "").strip()[:max_chars])
+        for r in rows
+        if (r["text_md"] or "").strip()
+    ]
+    if not pairs:
+        return 0
+
+    for batch_pairs in batched(pairs, batch):
+        b_ids = [pid for pid, _ in batch_pairs]
+        b_txts = [txt for _, txt in batch_pairs]
+        resp = client.embeddings.create(model=use_model, input=b_txts, dimensions=dims)
         for idx, emb in enumerate(resp.data):
             vec = json_dumps(emb.embedding)
             vec_insert(conn, vec, "optimized", int(b_ids[idx]))

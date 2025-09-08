@@ -81,3 +81,5 @@ uv.lock
 
 # Repo guidance files not meant for VCS
 AGENTS.md
+agent-logs/
+data/
