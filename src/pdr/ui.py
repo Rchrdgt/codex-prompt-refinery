@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
+# Ensure 'pdr' is importable when executed directly via streamlit on script path.
 import os
+import sys
 
-import streamlit as st
+_THIS_DIR = os.path.dirname(__file__)
+_SRC_DIR = os.path.abspath(os.path.join(_THIS_DIR, "..", ".."))
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
 
-try:
-    from st_copy_to_clipboard import st_copy_to_clipboard as _st_copy  # type: ignore
-except ImportError:  # pragma: no cover
-    _st_copy = None
+import streamlit as st  # noqa: E402
 
-from .db import connect, create_schema
-from .search import hybrid_search
+from pdr.db import connect, create_schema  # noqa: E402
+from pdr.search import hybrid_search  # noqa: E402
 
 
 def main() -> None:
@@ -54,9 +56,12 @@ def main() -> None:
 
 def _copy_and_download(text: str, filename: str) -> None:
     """Show copy and download controls."""
-    # Optional copy component
-    if _st_copy is not None:
-        _st_copy(text)
+    try:
+        from st_copy_to_clipboard import st_copy_to_clipboard  # type: ignore  # noqa: PLC0415
+
+        st_copy_to_clipboard(text)
+    except Exception:
+        pass
     st.download_button(
         "Download .md", data=text.encode("utf-8"), file_name=filename, mime="text/markdown"
     )

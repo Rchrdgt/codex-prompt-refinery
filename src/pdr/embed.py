@@ -2,27 +2,20 @@
 
 from __future__ import annotations
 
-import os
-
-from openai import OpenAI
-
+from .config import embeddings_client, get_settings
 from .db import vec_insert
 from .util import batched, json_dumps
 
 
-def _client() -> OpenAI:
-    return OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
-
 def embed_new_user_prompts(
-    conn, model: str = "text-embedding-3-small", dimensions: int | None = None, batch: int = 64
+    conn, model: str | None = None, dimensions: int | None = None, batch: int = 64
 ) -> int:
     """Embed user prompts that lack vectors.
 
     Args:
         conn: SQLite connection.
-        model: Embedding model name.
-        dimensions: Optional embedding dims override.
+        model: Embedding model name override.
+        dimensions: Optional dims override.
         batch: Batch size.
 
     Returns:
@@ -39,16 +32,16 @@ def embed_new_user_prompts(
     if not rows:
         return 0
 
-    client = _client()
+    settings = get_settings()
+    client = embeddings_client(settings)
+    use_model = model or settings.embedding_model
+    dims = dimensions if dimensions is not None else settings.embedding_dimensions
+
     inserted = 0
     ids = [int(r["id"]) for r in rows]
     texts = [r["text"] for r in rows]
     for b_ids, b_txts in zip(batched(ids, batch), batched(texts, batch), strict=False):
-        resp = client.embeddings.create(
-            model=model,
-            input=list(b_txts),
-            dimensions=dimensions,
-        )
+        resp = client.embeddings.create(model=use_model, input=list(b_txts), dimensions=dims)
         for idx, emb in enumerate(resp.data):
             vec = json_dumps(emb.embedding)
             vec_insert(conn, vec, "raw", int(b_ids[idx]))
@@ -58,14 +51,14 @@ def embed_new_user_prompts(
 
 
 def embed_optimized_prompts(
-    conn, model: str = "text-embedding-3-small", dimensions: int | None = None, batch: int = 64
+    conn, model: str | None = None, dimensions: int | None = None, batch: int = 64
 ) -> int:
     """Embed optimized prompts that lack vectors.
 
     Args:
         conn: SQLite connection.
-        model: Embedding model name.
-        dimensions: Optional embedding dims.
+        model: Embedding model override.
+        dimensions: Optional dims.
         batch: Batch size.
 
     Returns:
@@ -80,16 +73,17 @@ def embed_optimized_prompts(
     ).fetchall()
     if not rows:
         return 0
-    client = _client()
+
+    settings = get_settings()
+    client = embeddings_client(settings)
+    use_model = model or settings.embedding_model
+    dims = dimensions if dimensions is not None else settings.embedding_dimensions
+
     inserted = 0
     ids = [int(r["id"]) for r in rows]
     texts = [r["text_md"] for r in rows]
     for b_ids, b_txts in zip(batched(ids, batch), batched(texts, batch), strict=False):
-        resp = client.embeddings.create(
-            model=model,
-            input=list(b_txts),
-            dimensions=dimensions,
-        )
+        resp = client.embeddings.create(model=use_model, input=list(b_txts), dimensions=dims)
         for idx, emb in enumerate(resp.data):
             vec = json_dumps(emb.embedding)
             vec_insert(conn, vec, "optimized", int(b_ids[idx]))

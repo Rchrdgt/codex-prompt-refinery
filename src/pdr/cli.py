@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import os
 import subprocess
+from pathlib import Path
 
 import typer
 
 from .cluster import build_daily_clusters
+
+# from .config import get_settings  # ensure .env is loaded
 from .db import connect, create_schema
 from .embed import embed_new_user_prompts
 from .ingest import ingest_paths
@@ -15,24 +18,18 @@ from .synthesize import synthesize_for_clusters
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
-# Typer option singletons to avoid B008 lint in defaults
-DATE_OPT = typer.Option(None, "--date", help="YYYY-MM-DD")
-SINCE_OPT = typer.Option(None, "--since", min=0, help="Days back by file mtime")
-PATH_OPT = typer.Option(["~/.codex/**"], "--path", help="Glob(s) for JSON/JSONL under ~/.codex")
-DB_OPT = typer.Option(os.path.expanduser("~/.pdr.sqlite"), "--db", help="SQLite DB path")
-
-DATE_REQ_OPT = typer.Option(..., "--date", help="YYYY-MM-DD")
-MODEL_OPT = typer.Option("gpt-5-mini", "--model", help="OpenAI model id")
-DIMS_OPT = typer.Option(None, "--dims", help="Embedding dims override")
-PORT_OPT = typer.Option(8501, "--port", help="Streamlit port")
+# Default path for ingest command
+DEFAULT_INGEST_PATHS = typer.Option(
+    ["~/.codex/**"], "--path", help="Glob(s) for JSON/JSONL under ~/.codex"
+)
 
 
 @app.command()
 def ingest(
-    date: str | None = DATE_OPT,
-    since: int | None = SINCE_OPT,
-    path: list[str] = PATH_OPT,
-    db: str = DB_OPT,
+    date: str | None = typer.Option(None, "--date", help="YYYY-MM-DD"),
+    since: int | None = typer.Option(None, "--since", min=0, help="Days back by file mtime"),
+    path: list[str] = DEFAULT_INGEST_PATHS,
+    db: str = typer.Option(os.path.expanduser("~/.pdr.sqlite"), "--db", help="SQLite DB path"),
 ) -> None:
     """Ingest Codex CLI histories into SQLite with FTS."""
     conn = connect(db)
@@ -43,10 +40,10 @@ def ingest(
 
 @app.command()
 def synthesize(
-    date: str = DATE_REQ_OPT,
-    model: str = MODEL_OPT,
-    dims: int | None = DIMS_OPT,
-    db: str = DB_OPT,
+    date: str = typer.Option(..., "--date", help="YYYY-MM-DD"),
+    model: str | None = typer.Option(None, "--model", help="LLM model id"),
+    dims: int | None = typer.Option(None, "--dims", help="Embedding dims override"),
+    db: str = typer.Option(os.path.expanduser("~/.pdr.sqlite"), "--db", help="SQLite DB path"),
 ) -> None:
     """Embed, cluster, and synthesize prompts for a date."""
     conn = connect(db)
@@ -62,12 +59,18 @@ def synthesize(
 
 @app.command()
 def ui(
-    port: int = PORT_OPT,
-    db: str = DB_OPT,
+    port: int = typer.Option(8501, "--port", help="Streamlit port"),
+    db: str = typer.Option(os.path.expanduser("~/.pdr.sqlite"), "--db", help="SQLite DB path"),
 ) -> None:
     """Launch Streamlit UI."""
     env = os.environ.copy()
     env["PDR_DB"] = db
+
+    # Ensure package imports work when running the script path.
+    # Add repo 'src' to PYTHONPATH.
+    src_dir = str(Path(__file__).resolve().parents[2])  # .../src
+    env["PYTHONPATH"] = os.pathsep.join(filter(None, [env.get("PYTHONPATH", ""), src_dir]))
+
     app_path = os.path.join(os.path.dirname(__file__), "ui.py")
     subprocess.run(
         ["streamlit", "run", app_path, "--server.port", str(port), "--server.headless", "true"],
