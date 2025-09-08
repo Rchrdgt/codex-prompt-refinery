@@ -1,5 +1,7 @@
 # Troubleshooting
 
+Author: Bjorn Melin
+
 ## Missing FTS5
 
 - Symptom: `sqlite3.OperationalError: no such module: fts5`
