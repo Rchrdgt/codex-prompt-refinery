@@ -67,10 +67,16 @@ Local-first tool that ingests **OpenAI Codex CLI** histories (`~/.codex/**`), de
 
 ```mermaid
 flowchart TD
-  A[Codex JSON/JSONL] -->|ingest| B[SQLite: prompt_raw, FTS5, vec0]
-  B -->|cluster| C[Clusters]
-  C -->|synthesize (Responses API)| D[prompt_optimized, links, embeddings]
-  D -->|search| E[UI / CLI]
+  A[Codex JSON/JSONL]
+  B[SQLite: prompt_raw, FTS5, vec0]
+  C[Clusters]
+  D[prompt_optimized, links, embeddings]
+  E[UI / CLI]
+
+  A -->|ingest| B
+  B -->|cluster| C
+  C -->|synthesize via Responses API| D
+  D -->|search| E
 ```
 
 ---
