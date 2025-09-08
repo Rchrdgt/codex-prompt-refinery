@@ -1,5 +1,7 @@
 # Codex Prompt Refinery
 
+Author: Bjorn Melin
+
 Local-first tool that ingests **OpenAI Codex CLI** histories (`~/.codex/**`), deduplicates and clusters related prompts, and auto-synthesizes **atomic** and **workflow** prompts via the **OpenAI Responses API** with **Structured Outputs**. Stores everything in one **SQLite** database with **FTS5** keyword search and **sqlite-vec** semantic search. Ships a minimal **Streamlit** UI and a **Typer** CLI. Optional **systemd** timer for daily automation on WSL2.
 
 - Codex CLI: <https://github.com/openai/codex> • Product page: <https://developers.openai.com/codex/cli/>  
@@ -24,10 +26,14 @@ Local-first tool that ingests **OpenAI Codex CLI** histories (`~/.codex/**`), de
   - [Quickstart](#quickstart)
   - [CLI Usage](#cli-usage)
   - [UI](#ui)
+    - [Table tab](#table-tab)
+    - [Charts tab](#charts-tab)
+  - [Filters \& Saved Views](#filters--saved-views)
   - [Hybrid Search](#hybrid-search)
   - [Synthesis](#synthesis)
   - [Automation on WSL2](#automation-on-wsl2)
   - [Quality Gates](#quality-gates)
+  - [Testing](#testing)
   - [Troubleshooting](#troubleshooting)
   - [Security](#security)
   - [Contributing](#contributing)
@@ -47,6 +53,9 @@ Local-first tool that ingests **OpenAI Codex CLI** histories (`~/.codex/**`), de
 - **Cluster** related prompts per day by cosine ≥ 0.86.  
 - **Synthesize** atomic/workflow prompts using OpenAI **Responses API** + **Structured Outputs**.  
 - **UI** to browse, specialize, copy, and download prompts.  
+- **Server-side filtering** (SQLite): date, roles, sessions, kind (optimized).  
+- **Saved views** persisted in SQLite with **shareable URLs** (`?view=<id>`).  
+- **Table** and **Charts** tabs; optional **AgGrid** via `ENABLE_AGGRID=1` with automatic fallback.  
 - **CLI** via **Typer**.  
 - **Optional** daily automation with systemd on WSL2.
 
@@ -59,13 +68,17 @@ Local-first tool that ingests **OpenAI Codex CLI** histories (`~/.codex/**`), de
 - **No servers**. No external vector DBs or agents.
 
 ```mermaid
-\[Codex JSON/JSONL] -> ingest -> \[SQLite: prompt\_raw, FTS5, vec0]
-|
-v
-cluster -> synthesize (Responses API)
-|
-v
-\[prompt\_optimized, links, embeddings] -> UI/CLI search
+flowchart TD
+  A[Codex JSON/JSONL]
+  B[SQLite: prompt_raw, FTS5, vec0]
+  C[Clusters]
+  D[prompt_optimized, links, embeddings]
+  E[UI / CLI]
+
+  A -->|ingest| B
+  B -->|cluster| C
+  C -->|synthesize via Responses API| D
+  D -->|search| E
 ```
 
 ---
@@ -184,24 +197,46 @@ PDR_DB=~/.pdr.sqlite pdr ui --port 8501
 
 ## UI
 
-- Single page with search input.
-- Tabs: **Raw** and **Optimized**.
-- Each item shows code-fenced markdown, a “Specialize” text area, live preview, **Copy**, and **Download**.
-- Streamlit docs: [https://docs.streamlit.io/develop/api-reference](https://docs.streamlit.io/develop/api-reference)
+- Single page with search input and a sidebar for Filters and Views.
+- Tabs: **Optimized**, **Raw**, **Table**, **Charts**.
+- Cards show code-fenced markdown, “Specialize” text area, live preview, **Copy**, and **Download**.
+- Streamlit docs: <https://docs.streamlit.io/develop/api-reference>
 - Optional components:
+  - Copy button: <https://github.com/mmz-001/st-copy-to-clipboard>
+  - Editor (Ace): <https://github.com/okld/streamlit-ace>
+  - Editor (react-based): <https://github.com/bouzidanas/streamlit-code-editor>
 
-  - Copy button: [https://github.com/mmz-001/st-copy-to-clipboard](https://github.com/mmz-001/st-copy-to-clipboard)
-  - Editor (Ace): [https://github.com/okld/streamlit-ace](https://github.com/okld/streamlit-ace)
-  - Editor (react-based): [https://github.com/bouzidanas/streamlit-code-editor](https://github.com/bouzidanas/streamlit-code-editor)
+### Table tab
+
+- Default uses native Streamlit rendering; no extra deps.
+- Optional **AgGrid** table: set `ENABLE_AGGRID=1` and install:
+
+```bash
+uv pip install streamlit-aggrid pandas
+ENABLE_AGGRID=1 pdr ui --port 8501
+```
+
+If AgGrid is missing or errors, the UI automatically falls back to the native table.
+
+### Charts tab
+
+- Minimal counts derived from the same filtered results.
+
+## Filters & Saved Views
+
+- Filters are applied **server-side** in SQLite for performance and correctness.
+- Facets: date range (default last 30 days), roles, sessions, kind (optimized).
+- Saved views are persisted in the `ui_view` table (versioned JSON); views can be **shared** via URLs like `?view=<id>`.
+- Optional `PUBLIC_BASE_URL` can be set to show absolute share links in the sidebar.
 
 ---
 
 ## Hybrid Search
 
-- **Keyword**: `prompt_raw_fts` and `prompt_opt_fts` via FTS5.
-- **Semantic**: sqlite-vec `vec0` KNN using query embedding.
-- Combined by union and simple score.
-- FTS5: [https://www.sqlite.org/fts5.html](https://www.sqlite.org/fts5.html) • sqlite-vec: [https://alexgarcia.xyz/sqlite-vec/python.html](https://alexgarcia.xyz/sqlite-vec/python.html)
+- **Keyword**: `prompt_raw_fts` and `prompt_opt_fts` via FTS5, with filter predicates joined to source tables.
+- **Semantic**: sqlite-vec `vec0` KNN using query embedding, then **post-filtered** with the same predicates.
+- Combined and de-duplicated with simple scoring.
+- FTS5: <https://www.sqlite.org/fts5.html> • sqlite-vec: <https://alexgarcia.xyz/sqlite-vec/python.html>
 
 ---
 
@@ -242,11 +277,22 @@ systemctl --user list-timers | grep codex-prompt-refinery
 
 ## Quality Gates
 
-- `ruff` and `pylint` clean.
-- `pytest` green.
-- UI search < 150 ms on \~10k rows (typical hardware).
-- CLI commands idempotent.
+- ruff: `ruff format . && ruff check . --fix`
+- pylint: `pylint --fail-under=9.5 src/pdr tests`
+- pytest + coverage (≥ 80%): `make dev && make test`
 - Synthesis JSON must match the bundled schema (see **PRD.md**).
+
+## Testing
+
+See `docs/developers/testing.md` for a detailed guide.
+
+Quick run:
+
+```bash
+uv venv && source .venv/bin/activate
+uv pip install -e ".[dev]"
+make test  # runs pytest with coverage and fail-under 80
+```
 
 ---
 
@@ -256,6 +302,8 @@ systemctl --user list-timers | grep codex-prompt-refinery
 - **Codex paths**: History locations vary across versions; pass explicit `--path` globs if needed.
 - **API errors**: Check `OPENAI_API_KEY`. Reduce `--model` or cluster size.
 - **Permission errors on WSL2 timers**: Confirm systemd is enabled and user units are in `~/.config/systemd/user/`.
+- **Share URL not absolute**: Set `PUBLIC_BASE_URL` to your UI base (e.g., `https://host/app`).
+- **AgGrid missing or errors**: Unset `ENABLE_AGGRID` or install `streamlit-aggrid` + `pandas`; fallback is automatic.
 
 ---
 
@@ -288,10 +336,10 @@ systemctl --user list-timers | grep codex-prompt-refinery
 ```bibtex
 @software{codex_prompt_refinery_2025,
   title   = {codex-prompt-refinery},
-  author  = {SpecSynth},
+  author  = {Melin, Bjorn},
   year    = {2025},
   note    = {Local-first Codex CLI prompt refinery with SQLite FTS5 and sqlite-vec},
-  version = {0.1.0}
+  version = {0.1.1}
 }
 ```
 

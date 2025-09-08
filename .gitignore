@@ -31,6 +31,7 @@ __pycache__/
 venv/
 .env
 .env.*
+!.env.example
 .envrc
 .python-version
 
@@ -80,3 +81,5 @@ uv.lock
 
 # Repo guidance files not meant for VCS
 AGENTS.md
+agent-logs/
+data/

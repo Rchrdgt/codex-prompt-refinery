@@ -1,0 +1,11 @@
+[Unit]
+Description=Run codex-prompt-refinery daily
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+Unit=codex-prompt-refinery.service
+
+[Install]
+WantedBy=timers.target
+

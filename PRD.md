@@ -1,5 +1,7 @@
 # Product Requirements Document — `codex-prompt-refinery`
 
+Author: Bjorn Melin
+
 ## 1) Summary
 
 Local tool that ingests **OpenAI Codex CLI** history under `~/.codex/**`, extracts prompts and nearby assistant replies, deduplicates and groups related prompts, and auto-synthesizes **atomic** and **workflow** prompts via the **OpenAI Responses API** using **Structured Outputs**. Single **SQLite** database with **FTS5** keyword search and **sqlite-vec** semantic search. Minimal **Streamlit** UI to search, view, specialize, and copy prompts. Optional daily automation via **systemd** on WSL2.
