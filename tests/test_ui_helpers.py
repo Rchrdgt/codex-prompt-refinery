@@ -1,6 +1,7 @@
 """Test UI helpers."""
 
 import os
+from contextlib import suppress
 
 import streamlit as st
 
@@ -84,10 +85,12 @@ def test_hydrate_filters_from_view_sets_session_state():
     assert st.session_state.get("ui_filters_preload") == {"version": 1}
 
 
-def test_get_view_id_from_url_roundtrip(monkeypatch):
-    """Test roundtrip of getting view ID from URL."""
-    # Simulate query params in bare mode via monkeypatch
-    monkeypatch.setattr(st, "experimental_get_query_params", lambda: {})
+def test_get_view_id_from_url_roundtrip():
+    """Test roundtrip of getting view ID from URL using st.query_params."""
+    # Clear and validate empty
+    with suppress(Exception):
+        st.query_params.clear()
     assert _get_view_id_from_url() is None
-    monkeypatch.setattr(st, "experimental_get_query_params", lambda: {"view": [str(TEST_VIEW_ID)]})
+    # Set and validate
+    st.query_params["view"] = str(TEST_VIEW_ID)
     assert _get_view_id_from_url() == TEST_VIEW_ID

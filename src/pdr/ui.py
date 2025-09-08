@@ -1,6 +1,6 @@
 """Streamlit UI per PRD."""
-# ruff: noqa: PLR0915, PLR0912
-# pylint: disable=too-many-statements
+# ruff: noqa: PLR0915, PLR0912, PLC0415
+# pylint: disable=too-many-statements, too-many-branches, wrong-import-position
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ if _SRC_DIR not in sys.path:
     sys.path.insert(0, _SRC_DIR)
 
 import json  # noqa: E402
+import sqlite3  # noqa: E402
 from datetime import date, timedelta  # noqa: E402
 
 import streamlit as st  # noqa: E402
@@ -94,7 +95,7 @@ def main() -> None:  # pylint: disable=too-many-statements
                                     specialized = _specialize_prompt(
                                         base_text, spec.strip(), model_override=model_override
                                     )
-                                except Exception as exc:  # best-effort UI surface
+                                except Exception as exc:  # pylint: disable=broad-exception-caught
                                     specialized = f"Error specializing prompt: {exc}"
                                 st.session_state[out_key] = specialized
                         else:
@@ -129,7 +130,7 @@ def main() -> None:  # pylint: disable=too-many-statements
                         pretty = json.dumps(parsed, indent=2, ensure_ascii=False)
                         st.json(parsed)
                         _inline_copy_and_download(pretty, f"raw-{rid}.json")
-                    except Exception:
+                    except json.JSONDecodeError:
                         st.text_area("Raw line", raw_val, height=200, disabled=True)
                         _inline_copy_and_download(raw_val, f"raw-{rid}.txt")
 
@@ -146,19 +147,22 @@ def main() -> None:  # pylint: disable=too-many-statements
             if use_ag:
                 try:
                     # Soft dependency: only used if available
-                    import pandas as pd  # type: ignore  # noqa: PLC0415
-                    from st_aggrid import (  # type: ignore  # noqa: PLC0415
+                    import pandas as pd  # type: ignore  # noqa: PLC0415  # pylint: disable=import-outside-toplevel, import-error
+                    from st_aggrid import (  # type: ignore  # noqa: PLC0415  # pylint: disable=import-outside-toplevel, import-error
                         AgGrid,
                         GridOptionsBuilder,
                     )
-
-                    df = pd.DataFrame(rows)
-                    gb = GridOptionsBuilder.from_dataframe(df)
-                    gb.configure_pagination(enabled=True, paginationAutoPageSize=True)
-                    AgGrid(df, gridOptions=gb.build())
-                    df_built = True
-                except Exception:
+                except ImportError:
                     df_built = False
+                else:
+                    try:
+                        df = pd.DataFrame(rows)
+                        gb = GridOptionsBuilder.from_dataframe(df)
+                        gb.configure_pagination(enabled=True, paginationAutoPageSize=True)
+                        AgGrid(df, gridOptions=gb.build())
+                        df_built = True
+                    except Exception:  # noqa: BLE001  # pylint: disable=broad-exception-caught
+                        df_built = False
             if not df_built:
                 # Native fallback
                 # Minimal pretty print; avoid pandas dependency
@@ -176,10 +180,12 @@ def _inline_copy_and_download(text: str, filename: str) -> None:
     c1, c2 = st.columns([1, 1])
     with c1:
         try:
-            from st_copy_to_clipboard import st_copy_to_clipboard  # type: ignore  # noqa: PLC0415
+            from st_copy_to_clipboard import (
+                st_copy_to_clipboard,  # type: ignore  # noqa: PLC0415  # pylint: disable=import-outside-toplevel, import-error
+            )
 
             st_copy_to_clipboard(text)
-        except Exception:
+        except ImportError:
             st.button("Copy", key=f"copy-{hash(text) % 10_000_000}")
     with c2:
         st.download_button(
@@ -201,7 +207,7 @@ def _filters_sidebar(conn) -> dict:
     try:
         p_from = date.fromisoformat(p_ts.get("from", "")) if p_ts.get("from") else default_from
         p_to = date.fromisoformat(p_ts.get("to", "")) if p_ts.get("to") else today
-    except Exception:
+    except ValueError:
         p_from, p_to = default_from, today
     dr = st.sidebar.date_input("Date range", (p_from, p_to))
     # Populate sessions (recent)
@@ -261,8 +267,11 @@ def _views_sidebar(conn, filters: dict) -> int | None:  # returns current view i
     )
     if options:
         chosen_id = int(choice.split(":", 1)[0])
+        # When a different saved view is chosen, hydrate filters immediately so the
+        # next rerun renders sidebar controls with that view's filters.
         if chosen_id != current:
-            st.session_state["ui_current_view_id"] = chosen_id
+            _hydrate_filters_from_view(conn, chosen_id)
+            _set_query_param_view(chosen_id)
     # Save
     name = st.sidebar.text_input("View name")
     cols = st.sidebar.columns(3)
@@ -273,7 +282,7 @@ def _views_sidebar(conn, filters: dict) -> int | None:  # returns current view i
                 st.session_state["ui_current_view_id"] = view_id
                 _set_query_param_view(view_id)
                 st.sidebar.success("Saved")
-            except Exception as exc:  # pragma: no cover - UI surface
+            except sqlite3.Error as exc:  # pragma: no cover - UI surface
                 st.sidebar.error(f"Save failed: {exc}")
     with cols[1]:
         if st.button("Delete") and options:
@@ -294,19 +303,19 @@ def _views_sidebar(conn, filters: dict) -> int | None:  # returns current view i
 
 
 def _get_view_id_from_url() -> int | None:
-    params = st.experimental_get_query_params()
-    val = params.get("view", [None])[0]
+    params = st.query_params
+    val = params.get("view")
     try:
         return int(val) if val is not None else None
-    except Exception:
+    except (TypeError, ValueError):
         return None
 
 
 def _set_query_param_view(view_id: int | None) -> None:
     if view_id is None:
-        st.experimental_set_query_params()
+        st.query_params.clear()
     else:
-        st.experimental_set_query_params(view=str(view_id))
+        st.query_params["view"] = str(view_id)
 
 
 def _encode_view_url(view_id: int) -> str:
@@ -324,7 +333,7 @@ def _hydrate_filters_from_view(conn, view_id: int) -> None:
         return
     try:
         filters = json.loads(data["filters_json"]) if data.get("filters_json") else {}
-    except Exception:
+    except json.JSONDecodeError:
         filters = {}
     # Best-effort: store in session for sidebar to display defaults next rerun
     st.session_state["ui_filters_preload"] = filters
@@ -438,7 +447,7 @@ def _specialize_prompt(
             ],
             temperature=0.2,
         )
-    except Exception:
+    except Exception:  # noqa: BLE001  # pylint: disable=broad-exception-caught
         # Provider/model mismatch fallback for Cerebras envs accidentally set to OpenAI models
         if settings.llm_provider == "cerebras":
             fallback_model = "qwen-3-coder-480b"
