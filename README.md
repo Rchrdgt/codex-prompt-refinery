@@ -1,5 +1,7 @@
 # Codex Prompt Refinery
 
+Author: Bjorn Melin
+
 Local-first tool that ingests **OpenAI Codex CLI** histories (`~/.codex/**`), deduplicates and clusters related prompts, and auto-synthesizes **atomic** and **workflow** prompts via the **OpenAI Responses API** with **Structured Outputs**. Stores everything in one **SQLite** database with **FTS5** keyword search and **sqlite-vec** semantic search. Ships a minimal **Streamlit** UI and a **Typer** CLI. Optional **systemd** timer for daily automation on WSL2.
 
 - Codex CLI: <https://github.com/openai/codex> • Product page: <https://developers.openai.com/codex/cli/>  
@@ -334,10 +336,10 @@ make test  # runs pytest with coverage and fail-under 80
 ```bibtex
 @software{codex_prompt_refinery_2025,
   title   = {codex-prompt-refinery},
-  author  = {SpecSynth},
+  author  = {Melin, Bjorn},
   year    = {2025},
   note    = {Local-first Codex CLI prompt refinery with SQLite FTS5 and sqlite-vec},
-  version = {0.1.0}
+  version = {0.1.1}
 }
 ```
 

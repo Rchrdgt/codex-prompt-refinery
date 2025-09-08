@@ -1,5 +1,7 @@
 # CLI Reference
 
+Author: Bjorn Melin
+
 The CLI uses Typer. Run `pdr --help` or any subcommand with `--help`.
 
 ## Commands

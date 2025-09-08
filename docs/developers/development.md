@@ -1,5 +1,7 @@
 # Developer Guide
 
+Author: Bjorn Melin
+
 ## Environment
 
 - Python 3.11+, `uv`.

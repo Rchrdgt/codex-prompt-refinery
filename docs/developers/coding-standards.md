@@ -1,5 +1,7 @@
 # Coding Style & Standards
 
+Author: Bjorn Melin
+
 ## Language & Types
 
 - Python ≥ 3.11, full type hints. Prefer `pathlib.Path`, f-strings, early returns.

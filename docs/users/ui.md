@@ -1,5 +1,7 @@
 # UI Guide
 
+Author: Bjorn Melin
+
 Launch with:
 
 ```bash

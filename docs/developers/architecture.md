@@ -1,5 +1,7 @@
 # Architecture Overview
 
+Author: Bjorn Melin
+
 ```mermaid
 flowchart TD
     Ingest[ingest.py] -->|raw rows| DB[(SQLite)]

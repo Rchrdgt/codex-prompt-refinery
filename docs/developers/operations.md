@@ -1,5 +1,7 @@
 # Operations & Deployment
 
+Author: Bjorn Melin
+
 ## Environment Variables
 
 - `OPENAI_API_KEY`: required for embeddings/synthesis.

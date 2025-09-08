@@ -1,5 +1,7 @@
 # User Guide — Codex Prompt Refinery
 
+Author: Bjorn Melin
+
 This tool ingests OpenAI Codex CLI histories, deduplicates and clusters prompts, synthesizes reusable atomic/workflow prompts, and provides hybrid search with a simple UI.
 
 ## Requirements
