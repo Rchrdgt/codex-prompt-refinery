@@ -1,30 +1,45 @@
-# Testing Guidelines
+# Testing Guide
 
-## Framework
+This project uses pytest for tests, ruff for formatting/lint, and pylint as an extra gate.
 
-- `pytest` for unit tests. Keep deterministic/offline.
-- Use in-memory DB: `connect(":memory:")` and seed rows with SQL.
+## Commands
 
-## Conventions
+- Format + lint (ruff):
+  - `ruff format .`
+  - `ruff check . --fix`
+- Lint gate (pylint):
+  - `pylint --fail-under=9.5 src/pdr tests`
+- Run tests (with coverage gate):
+  - `make dev` (installs dev extras including pytest-cov)
+  - `make test` (runs pytest with `--cov` and `--cov-fail-under=80`)
 
-- Name files `tests/test_*.py`; test functions `test_*`.
-- Each test should assert behavior, not implementation details.
-- Mock boundaries only (e.g., OpenAI API, filesystem) as needed.
+If you prefer to run pytest directly:
 
-## Running
+- `. .venv/bin/activate && pytest -q --cov=src/pdr --cov-report=term-missing --cov-fail-under=80`
 
-```bash
-pytest -q
-```
+## Tests Overview
 
-## Patterns
+- `tests/test_db_views.py` — CRUD for saved UI views (SQLite table `ui_view`).
+- `tests/test_search_filters.py` — Filtering in `hybrid_search`: FTS/LIKE with WHERE predicates and vector KNN post‑filter safety.
+- `tests/test_search.py` — Basic hybrid search behavior for FTS.
+- `tests/test_ui_helpers.py` — Non‑UI helpers used by UI: recent filtering, URL encoding/decoding, hydrate from saved view.
+- `tests/test_ui_smoke.py` — Optional Streamlit AppTest smoke run for `src/pdr/ui.py` (skips if API is unavailable).
+- `tests/test_ingest.py`, `tests/test_synthesize_schema.py`, `tests/test_util.py` — Existing suite.
 
-- Utility functions: small, pure tests (e.g., canonicalization, hashing, cosine).
-- Ingest: write temporary JSONL and assert dedupe/date filters.
-- Search: seed FTS tables and assert keyword results; vec queries can be skipped in CI.
-- Schemas: validate representative JSON against Pydantic models and JSON Schema keys.
+## Patterns & Practices
 
-## Quality Gates
+- Deterministic tests: no timing sleeps, no external network or services.
+- In‑memory SQLite for DB tests; seed FTS mirrors explicitly.
+- Avoid fragile UI assertions; the smoke test only checks for error‑free render.
+- Prefer focused unit tests that validate invariants and SQL WHERE behavior.
 
-- `ruff format . && ruff check . --fix`
-- `pylint --fail-under=9.5 src/pdr tests`
+## Writing New Tests
+
+- Seed data close to tests; commit before executing queries.
+- Test both presence and absence of filters; verify relevant WHERE clauses via outcomes (e.g., roles/kind restricted).
+- Keep assertions stable and informative; avoid brittle string/HTML matches.
+
+## Troubleshooting
+
+- If `streamlit.testing.v1` is not available, `tests/test_ui_smoke.py` will skip automatically.
+- If FTS5 is unavailable, LIKE fallback is exercised automatically by the code; tests still pass.
