@@ -65,14 +65,12 @@ Local-first tool that ingests **OpenAI Codex CLI** histories (`~/.codex/**`), de
 - **Libraries first**: SQLite FTS5 and sqlite-vec for search; Streamlit for UI; Typer for CLI.  
 - **No servers**. No external vector DBs or agents.
 
-```
-\[Codex JSON/JSONL] -> ingest -> \[SQLite: prompt\_raw, FTS5, vec0]
-|
-v
-cluster -> synthesize (Responses API)
-|
-v
-\[prompt\_optimized, links, embeddings] -> UI/CLI search
+```mermaid
+flowchart TD
+  A[Codex JSON/JSONL] -->|ingest| B[SQLite: prompt_raw, FTS5, vec0]
+  B -->|cluster| C[Clusters]
+  C -->|synthesize (Responses API)| D[prompt_optimized, links, embeddings]
+  D -->|search| E[UI / CLI]
 ```
 
 ---
