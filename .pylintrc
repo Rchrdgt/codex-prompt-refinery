@@ -1,0 +1,20 @@
+[MASTER]
+ignore-paths=^build/,^dist/
+extension-pkg-whitelist=
+load-plugins=
+jobs=1
+
+[MESSAGES CONTROL]
+disable=
+  C0114, ; missing-module-docstring handled by ruff
+  C0116, ; missing-function-docstring handled by ruff
+  R0903, ; too-few-public-methods
+  R0913, ; too-many-arguments
+  R0914, ; too-many-locals
+  C0103  ; short CLI var names allowed
+
+[FORMAT]
+max-line-length=100
+
+[TYPECHECK]
+ignored-modules=sqlite_vec

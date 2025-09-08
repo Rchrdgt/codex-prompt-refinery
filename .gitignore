@@ -1,0 +1,82 @@
+###############################
+# Global
+###############################
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# General caches and temp
+.cache/
+tmp/
+*.tmp
+*.log
+logs/
+
+###############################
+# Python
+###############################
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments and tooling
+.venv/
+venv/
+.env
+.env.*
+.envrc
+.python-version
+
+# Packaging / distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+wheelhouse/
+wheels/
+*.egg
+MANIFEST
+
+# Test & coverage
+.pytest_cache/
+.tox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Type checking / linters
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+.pylint.d/
+.dmypy.json
+
+# Jupyter
+.ipynb_checkpoints/
+.jupyter/
+.ipython/
+
+###############################
+# Project-specific
+###############################
+# Local artifacts produced by this repo or tools
+contrib/**/__pycache__/
+examples/**/__pycache__/
+.streamlit/
+
+# uv-only workflow: avoid legacy files
+requirements*.txt
+uv.lock
+
+# Repo guidance files not meant for VCS
+AGENTS.md

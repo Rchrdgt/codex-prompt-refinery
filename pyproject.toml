@@ -1,0 +1,40 @@
+# pyproject.toml
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codex-prompt-refinery"
+version = "0.1.0"
+description = "Local Codex CLI prompt refinery with SQLite FTS5 and sqlite-vec"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "SpecSynth" }]
+license = { text = "MIT" }
+
+dependencies = [
+  "openai>=1.40.0",
+  "sqlite-vec>=0.1.6",
+  "typer>=0.12.3",
+  "streamlit>=1.36.0",
+  "rapidfuzz>=3.6.1",
+  "pydantic>=2.7.0",
+  "jinja2>=3.1.4",
+]
+
+[project.optional-dependencies]
+dev = [
+  "ruff>=0.5.0",
+  "pylint>=3.2.0",
+  "pytest>=8.2.0",
+]
+ui = [
+  "streamlit-ace>=0.1.1",
+  "st-copy-to-clipboard>=0.1.6",
+]
+
+[project.scripts]
+pdr = "pdr.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
