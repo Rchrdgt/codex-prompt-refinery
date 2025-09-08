@@ -205,6 +205,7 @@ PDR_DB=~/.pdr.sqlite pdr ui --port 8501
   - Editor (react-based): <https://github.com/bouzidanas/streamlit-code-editor>
 
 ### Table tab
+
 - Default uses native Streamlit rendering; no extra deps.
 - Optional **AgGrid** table: set `ENABLE_AGGRID=1` and install:
 
@@ -216,6 +217,7 @@ ENABLE_AGGRID=1 pdr ui --port 8501
 If AgGrid is missing or errors, the UI automatically falls back to the native table.
 
 ### Charts tab
+
 - Minimal counts derived from the same filtered results.
 
 ## Filters & Saved Views
@@ -298,8 +300,8 @@ make test  # runs pytest with coverage and fail-under 80
 - **Codex paths**: History locations vary across versions; pass explicit `--path` globs if needed.
 - **API errors**: Check `OPENAI_API_KEY`. Reduce `--model` or cluster size.
 - **Permission errors on WSL2 timers**: Confirm systemd is enabled and user units are in `~/.config/systemd/user/`.
- - **Share URL not absolute**: Set `PUBLIC_BASE_URL` to your UI base (e.g., `https://host/app`).
- - **AgGrid missing or errors**: Unset `ENABLE_AGGRID` or install `streamlit-aggrid` + `pandas`; fallback is automatic.
+- **Share URL not absolute**: Set `PUBLIC_BASE_URL` to your UI base (e.g., `https://host/app`).
+- **AgGrid missing or errors**: Unset `ENABLE_AGGRID` or install `streamlit-aggrid` + `pandas`; fallback is automatic.
 
 ---
 
