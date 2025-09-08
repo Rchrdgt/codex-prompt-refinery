@@ -1,0 +1,11 @@
+[Unit]
+Description=codex-prompt-refinery daily synth
+After=network-online.target
+
+[Service]
+Type=oneshot
+Environment=PDR_DB=%h/.pdr.sqlite
+ExecStart=%h/.venv/bin/pdr ingest --since 1
+ExecStartPost=%h/.venv/bin/pdr synthesize --date %i --model gpt-5-mini
+WorkingDirectory=%h
+
